@@ -174,13 +174,15 @@ def lambda_handler(event, context=None):
 
     pdf_bytes = generate_pdf(body)
 
-    # Check if request originated from HTTP (API Gateway or Function URL)
-    is_http_request = isinstance(event, dict) and (
+    # Encode PDF bytes to Base64 string
+    encoded_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+
+    # Check if request originated from HTTP API Gateway or Lambda Function URL proxy
+    is_http_proxy = isinstance(event, dict) and (
         "requestContext" in event or "rawPath" in event or "httpMethod" in event
     )
 
-    if is_http_request:
-        encoded_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+    if is_http_proxy:
         return {
             "statusCode": 200,
             "headers": {
@@ -190,9 +192,9 @@ def lambda_handler(event, context=None):
             "isBase64Encoded": True,
             "body": encoded_pdf,
         }
-    else:
-        # Direct Lambda invocation return (raw bytes)
-        return pdf_bytes
+
+    # Return Base64 encoded string directly for direct invocations
+    return encoded_pdf
 
 
 # Alias handler for AWS Lambda Console handler settings
